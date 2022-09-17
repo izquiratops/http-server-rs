@@ -1,4 +1,6 @@
+use std::io::Read;
 use std::net::TcpListener;
+use crate::Request;
 
 pub struct Server {
     addr: String,
@@ -18,8 +20,25 @@ impl Server {
 
         loop {
             match listener.accept() {
-                Ok((_socket, addr)) => println!("new client: {addr:?}"),
-                Err(e) => println!("couldn't get client: {e:?}"),
+                Ok((mut stream, addr)) => {
+                    println!("new client: {addr:?}");
+
+                    let mut buffer = [0; 1024];
+                    match stream.read(&mut buffer) {
+                        Ok(size) => {
+                            match Request::try_from(&buffer[..]) {
+                                Ok(request) => {},
+                                Err(e) => println!("Failed to parse request: {e:?}")
+                            }
+                        }
+                        Err(e) => {
+                            println!("failed to read connection: {e:?}");
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("couldn't get client: {e:?}");
+                }
             }
         }
     }
