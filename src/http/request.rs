@@ -2,26 +2,24 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str::{from_utf8, Utf8Error};
 
-use super::method::{Method, MethodError};
+use super::{Method, MethodError};
+use super::{QueryString};
 
-pub struct Request<'buffer> {
-    path: &'buffer str,
-    query_string: Option<&'buffer str>,
+pub struct Request<'buf> {
+    path: &'buf str,
+    query_string: Option<QueryString<'buf>>,
     method: Method,
 }
 
-impl<'buffer> TryFrom<&'buffer [u8]> for Request<'buffer> {
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = ParseError;
 
-    fn try_from(buf: &'buffer [u8]) -> Result<Self, Self::Error> {
+    fn try_from(buf: &'buf [u8]) -> Result<Self, Self::Error> {
         let request = from_utf8(buf)?;
 
-        let (method, request) = fetch_next_word(request)
-            .ok_or(ParseError::InvalidRequest)?;
-        let (mut path, request) = fetch_next_word(request)
-            .ok_or(ParseError::InvalidRequest)?;
-        let (protocol, _) = fetch_next_word(request)
-            .ok_or(ParseError::InvalidRequest)?;
+        let (method, request) = fetch_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (mut path, request) = fetch_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (protocol, _) = fetch_next_word(request).ok_or(ParseError::InvalidRequest)?;
 
         if protocol != "HTTP/1.1" {
             return Err(ParseError::InvalidProtocol);
@@ -31,14 +29,14 @@ impl<'buffer> TryFrom<&'buffer [u8]> for Request<'buffer> {
 
         let mut query_string = None;
         if let Some(i) = path.find('?') {
-            query_string = Some(&path[i + 1..]);
+            query_string = Some(QueryString::from(path));
             path = &path[..i];
         }
 
         Ok(Self {
             path,
             query_string,
-            method
+            method,
         })
     }
 }
