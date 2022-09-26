@@ -26,8 +26,8 @@ impl Server {
                     let mut buffer = [0; 1024];
                     match stream.read(&mut buffer) {
                         Ok(_) => match Request::try_from(&buffer[..]) {
-                            Ok(_) => {}
-                            Err(e) => println!("Failed to parse request: {e:?}"),
+                            Ok(req) => println!("accepting request: {req:#?}"),
+                            Err(e) => println!("failed to parse request: {e:?}"),
                         },
                         Err(e) => {
                             println!("failed to read connection: {e:?}");

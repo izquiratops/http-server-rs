@@ -19,6 +19,7 @@ impl FromStr for Method {
     }
 }
 
+#[derive(Debug)]
 pub enum Method {
     GET,
     DELETE,
@@ -28,7 +29,7 @@ pub enum Method {
     CONNECT,
     OPTIONS,
     TRACE,
-    PATCH
+    PATCH,
 }
 
 pub struct MethodError;
