@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::net::TcpListener;
 
 use crate::http::{Response, StatusCode};
@@ -21,31 +21,42 @@ impl Server {
         let listener = TcpListener::bind(&self.addr).unwrap();
 
         loop {
-            match listener.accept() {
-                Ok((mut stream, addr)) => {
-                    println!("new client: {addr:?}");
+            self.get_new_connection(&listener);
+        }
+    }
 
-                    let mut buffer = [0; 1024];
-                    match stream.read(&mut buffer) {
-                        Ok(_) => match Request::try_from(&buffer[..]) {
+    fn get_new_connection(&self, listener: &TcpListener) {
+        match listener.accept() {
+            Ok((mut stream, addr)) => {
+                let mut buffer = [0; 1024];
+
+                match stream.read(&mut buffer) {
+                    Ok(req) => {
+                        let response = match Request::try_from(&buffer[..]) {
                             Ok(req) => {
-                                println!("accepting request: {req:#?}");
-                                let response = Response::new(
+                                Response::new(
                                     StatusCode::Ok,
-                                    Some("<h1>Hello wordl!</h1>".to_string())
-                                );
-                                write!(stream, "{}", response).expect("TODO: panic message");
+                                    Some("<h1>Hello wordl!</h1>".to_string()),
+                                )
                             }
-                            Err(e) => println!("failed to parse request: {e:?}"),
-                        },
-                        Err(e) => {
-                            println!("failed to read connection: {e:?}");
+                            Err(e) => {
+                                Response::new(
+                                    StatusCode::BadRequest,
+                                    None)
+                            }
+                        };
+
+                        if let Err(e) = response.send(&mut stream) {
+                            println!("failed to send response: {e:?}");
                         }
                     }
+                    Err(e) => {
+                        println!("failed to read from connection: {e:?}");
+                    }
                 }
-                Err(e) => {
-                    println!("couldn't get client: {e:?}");
-                }
+            }
+            Err(e) => {
+                println!("couldn't get client: {e:?}");
             }
         }
     }
