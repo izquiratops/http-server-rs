@@ -1,6 +1,4 @@
 use std::io::{Result as IoResult, Write};
-use std::net::TcpStream;
-
 use super::StatusCode;
 
 #[derive(Debug)]
@@ -14,9 +12,12 @@ impl Response {
         Response { status_code, body }
     }
 
-    // <()> means no data
-    pub fn send(&self, stream: &mut TcpStream) -> IoResult<()> {
-        let bodyContent = match &self.body {
+    /*  'impl Write' defines a new func for every different type called on runtime!
+     *  So we end up with a lot of implementations of the same function,
+     *  but each one expecting a different argument.
+     */
+    pub fn send(&self, stream: &mut impl Write) -> IoResult<()> { // <()> means no data
+        let body_content = match &self.body {
             Some(b) => b,
             None => ""
         };
@@ -26,7 +27,7 @@ impl Response {
             "HTTP/1.1 {} {}\r\n\r\n {}",
             self.status_code,
             self.status_code.reason_phrase(),
-            bodyContent
+            body_content
         )
     }
 }
