@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str::{from_utf8, Utf8Error};
-
 use super::{Method, MethodError};
 use super::{QueryString};
 
@@ -10,6 +9,20 @@ pub struct Request<'buf> {
     path: &'buf str,
     query_string: Option<QueryString<'buf>>,
     method: Method,
+}
+
+impl<'buf> Request<'buf> {
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    pub fn query_string(&self) -> Option<&QueryString> {
+        self.query_string.as_ref()
+    }
+
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
 }
 
 impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
@@ -84,14 +97,12 @@ impl From<Utf8Error> for ParseError {
 
 impl Debug for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        // todo!()
         write!(f, "{}", self.message())
     }
 }
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        // todo!()
         write!(f, "request: {}", self.message())
     }
 }
